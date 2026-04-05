@@ -236,11 +236,15 @@ router.get("/logout", function (req, res) {
 });
 
 function isLoggedIn(req, res, next) {
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated()) 
     return next();
-  } else {
-    res.redirect("/login");
+  res.redirect("/login");
   }
-}
+
+
+
+
+
+
 
 module.exports = router;

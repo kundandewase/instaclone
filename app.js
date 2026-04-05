@@ -18,7 +18,7 @@ app.set('view engine', 'ejs');
 app.use(expressSession({
   resave: false,
   saveUninitialized: false,
-  secret: "heyheyehhdd"
+  secret: "hey hey hey"
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -51,3 +51,5 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
+
+
