@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-[#fafafa] text-[#111827]" data-current-user="<%= user.username %>" data-initial-chat-with="<%= (typeof initialChatWith !== 'undefined' && initialChatWith) ? initialChatWith : '' %>">
+<div class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_rgba(250,250,250,1)_45%,_rgba(244,245,247,1)_100%)]">
+  <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-[380px_minmax(0,1fr)] gap-4 lg:gap-6 min-h-[calc(100vh-1.5rem)]">
+      <aside class="bg-white border border-slate-200 rounded-[28px] shadow-[0_12px_40px_rgba(15,23,42,0.08)] overflow-hidden flex flex-col">
+        <div class="px-5 py-4 border-b border-slate-200/80 bg-white/95 backdrop-blur">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Instagram</p>
+              <h1 class="text-2xl font-semibold tracking-tight">Messages</h1>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 via-rose-500 to-amber-400 p-[2px]">
+              <div class="w-full h-full rounded-full bg-white flex items-center justify-center text-sm font-semibold text-slate-900">
+                <%= user.username.slice(0, 1).toUpperCase() %>
+              </div>
+            </div>
+          </div>
+          <p class="text-sm text-slate-500 mt-2">Send private messages like Instagram DM.</p>
+        </div>
+
+        <div class="p-4 border-b border-slate-200/80">
+          <div class="flex items-center gap-2 rounded-2xl bg-slate-100 border border-slate-200 px-4 py-3 focus-within:border-slate-300 focus-within:bg-white transition">
+            <i class="ri-search-line text-slate-400"></i>
+            <input id="searchInput" placeholder="Search users"
+              class="w-full bg-transparent outline-none text-sm placeholder:text-slate-400">
+          </div>
+          <div id="searchResults" class="mt-3 space-y-2"></div>
+        </div>
+
+        <div class="px-5 pt-4 pb-3 flex items-center justify-between">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Chats</p>
+          <p class="text-xs text-slate-400">Recent</p>
+        </div>
+
+        <div id="conversationList" class="overflow-y-auto flex-1 px-2 pb-2"></div>
+      </aside>
+
+      <main class="bg-white border border-slate-200 rounded-[28px] shadow-[0_12px_40px_rgba(15,23,42,0.08)] overflow-hidden flex flex-col min-h-[calc(100vh-1.5rem)]">
+        <div id="chatHeader" class="px-5 py-4 border-b border-slate-200/80 bg-white/95 backdrop-blur flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div id="chatAvatar" class="w-11 h-11 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-sm font-semibold text-slate-500 shrink-0">
+              <span>?</span>
+            </div>
+            <div class="min-w-0">
+              <h2 id="chatTitle" class="font-semibold text-lg leading-none truncate">Select a conversation</h2>
+              <p id="chatSubtitle" class="text-sm text-slate-500 mt-1 truncate">Search a user or pick from your conversations.</p>
+            </div>
+          </div>
+          <div class="hidden sm:flex items-center gap-2 text-slate-400">
+            <i class="ri-messenger-line text-xl"></i>
+          </div>
+        </div>
+
+        <div class="flex-1 bg-[linear-gradient(180deg,rgba(250,250,250,1),rgba(255,255,255,1))]">
+          <div id="chatBox" class="h-full overflow-y-auto px-4 sm:px-6 py-5 space-y-3">
+            <div class="max-w-md text-slate-500">
+              <p class="text-lg font-medium text-slate-700">Choose a chat</p>
+              <p class="text-sm mt-1">Search someone or open a recent conversation from the left panel.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200/80 bg-white px-4 sm:px-5 py-4">
+          <form id="sendForm" class="flex items-end gap-3" method="POST" action="/send-message">
+            <div class="flex-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-slate-300 focus-within:bg-white transition">
+              <input id="messageInput" type="text" placeholder="Message..."
+                class="w-full bg-transparent outline-none text-sm sm:text-[15px] placeholder:text-slate-400" autocomplete="off" disabled>
+              <input id="receiverInput" type="hidden" name="receiver" value="">
+              <input id="textInput" type="hidden" name="text" value="">
+            </div>
+            <button id="sendBtn" type="submit"
+              class="h-12 px-5 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold text-sm shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed" disabled>
+              Send
+            </button>
+          </form>
+          <p id="sendStatus" class="mt-2 text-xs text-rose-500 hidden"></p>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<script>
+const currentUser = document.body.dataset.currentUser;
+const initialChatWith = document.body.dataset.initialChatWith || "";
+let selectedUser = null;
+let conversations = [];
+
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
+const conversationList = document.getElementById("conversationList");
+const chatHeader = document.getElementById("chatHeader");
+const chatTitle = document.getElementById("chatTitle");
+const chatSubtitle = document.getElementById("chatSubtitle");
+const chatAvatar = document.getElementById("chatAvatar");
+const chatBox = document.getElementById("chatBox");
+const sendForm = document.getElementById("sendForm");
+const messageInput = document.getElementById("messageInput");
+const receiverInput = document.getElementById("receiverInput");
+const textInput = document.getElementById("textInput");
+const sendBtn = document.getElementById("sendBtn");
+const sendStatus = document.getElementById("sendStatus");
+
+function formatTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function getInitial(value) {
+  return String(value || "?").slice(0, 1).toUpperCase();
+}
+
+function renderConversations() {
+  conversationList.innerHTML = "";
+
+  if (!conversations.length) {
+    conversationList.innerHTML = '<p class="p-4 text-sm text-zinc-500">No conversations yet.</p>';
+    return;
+  }
+
+  conversations.forEach((item) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = `w-full text-left px-3 py-3 rounded-2xl transition ${selectedUser === item.username ? "bg-slate-100" : "hover:bg-slate-50"}`;
+
+    row.innerHTML = `
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-fuchsia-500 via-rose-500 to-amber-400 p-[2px] shrink-0">
+          <img src="/images/uploads/${item.picture}" alt="${escapeHtml(item.username)}" class="w-full h-full rounded-full object-cover border-2 border-white">
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-sm font-semibold text-slate-900 truncate">${escapeHtml(item.username)}</p>
+            <span class="text-[11px] text-slate-400 shrink-0">${formatTime(item.lastAt)}</span>
+          </div>
+          <p class="text-sm text-slate-500 truncate mt-0.5">${escapeHtml(item.lastText || "")}</p>
+        </div>
+      </div>
+    `;
+
+    row.addEventListener("click", () => openConversation(item.username));
+    conversationList.appendChild(row);
+  });
+}
+
+function renderMessages(messages) {
+  chatBox.innerHTML = "";
+
+  if (!messages.length) {
+    chatBox.innerHTML = `
+      <div class="flex h-full min-h-[280px] items-center justify-center">
+        <div class="text-center max-w-sm">
+          <div class="w-16 h-16 rounded-full mx-auto mb-4 bg-gradient-to-br from-fuchsia-500 via-rose-500 to-amber-400 p-[2px]">
+            <div class="w-full h-full rounded-full bg-white flex items-center justify-center text-slate-400 text-2xl">
+              <i class="ri-chat-3-line"></i>
+            </div>
+          </div>
+          <p class="text-lg font-semibold text-slate-800">No messages yet</p>
+          <p class="text-sm text-slate-500 mt-1">Send the first message and start the conversation.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  messages.forEach((msg) => {
+    const mine = msg.sender === currentUser;
+    const row = document.createElement("div");
+    row.className = `flex ${mine ? "justify-end" : "justify-start"}`;
+
+    row.innerHTML = `
+      <div class="max-w-[78%] rounded-[22px] px-4 py-3 shadow-sm ${mine ? "bg-[#efefef] text-slate-900" : "bg-white border border-slate-200 text-slate-900"}">
+        <p class="text-[15px] leading-6 break-words">${escapeHtml(msg.text)}</p>
+        <p class="text-[11px] mt-1.5 ${mine ? "text-slate-500" : "text-slate-400"}">${formatTime(msg.createdAt)}</p>
+      </div>
+    `;
+
+    chatBox.appendChild(row);
+  });
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function loadConversations() {
+  const res = await fetch("/chat/conversations", { headers: { Accept: "application/json" } });
+  const data = await res.json();
+  conversations = data.conversations || [];
+  renderConversations();
+}
+
+async function openConversation(username) {
+  selectedUser = username;
+  chatTitle.textContent = username;
+  chatSubtitle.textContent = `Chatting with @${username}`;
+  chatAvatar.innerHTML = `<span>${getInitial(username)}</span>`;
+  messageInput.disabled = false;
+  sendBtn.disabled = false;
+  receiverInput.value = username;
+  renderConversations();
+
+  try {
+    const res = await fetch(`/chat/${encodeURIComponent(username)}`, { headers: { Accept: "application/json" } });
+    if (!res.ok) {
+      throw new Error("Could not load conversation");
+    }
+    const data = await res.json();
+    renderMessages(data.messages || []);
+  } catch (err) {
+    chatBox.innerHTML = '<p class="text-rose-500 text-sm">Could not load conversation.</p>';
+  }
+}
+
+searchInput.addEventListener("input", async () => {
+  const query = searchInput.value.trim();
+
+  if (!query) {
+    searchResults.innerHTML = "";
+    return;
+  }
+
+  const res = await fetch(`/search/${encodeURIComponent(query)}`, { headers: { Accept: "application/json" } });
+  const users = await res.json();
+
+  searchResults.innerHTML = "";
+
+  users
+    .filter((user) => user.username !== currentUser)
+    .forEach((user) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "w-full text-left px-3 py-3 rounded-2xl hover:bg-slate-50 border border-slate-200 bg-white text-sm flex items-center gap-3";
+      item.innerHTML = `
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 via-rose-500 to-amber-400 p-[2px] shrink-0">
+          <div class="w-full h-full rounded-full bg-white flex items-center justify-center text-slate-500 font-semibold">${getInitial(user.username)}</div>
+        </div>
+        <div class="min-w-0">
+          <p class="font-medium text-slate-900 truncate">${escapeHtml(user.username)}</p>
+          <p class="text-xs text-slate-500 truncate">Tap to open chat</p>
+        </div>
+      `;
+      item.addEventListener("click", () => {
+        searchResults.innerHTML = "";
+        searchInput.value = "";
+        openConversation(user.username);
+      });
+      searchResults.appendChild(item);
+    });
+});
+
+sendForm.addEventListener("submit", async (event) => {
+  if (!selectedUser) {
+    event.preventDefault();
+    sendStatus.classList.add("hidden");
+    sendStatus.textContent = "";
+    sendStatus.textContent = "Select a conversation first";
+    sendStatus.classList.remove("hidden");
+    return;
+  }
+
+  event.preventDefault();
+  const text = messageInput.value.trim();
+  if (!text) {
+    return;
+  }
+
+  textInput.value = text;
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch("/send-message", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        receiver: receiverInput.value,
+        text: textInput.value,
+      }),
+    });
+
+    if (!res.ok) {
+      let errorText = "Message could not be sent";
+      try {
+        const payload = await res.json();
+        if (payload.error) errorText = payload.error;
+      } catch (e) {
+        const fallbackText = await res.text();
+        if (fallbackText) errorText = fallbackText;
+      }
+      sendStatus.textContent = errorText;
+      sendStatus.classList.remove("hidden");
+      return;
+    }
+
+    messageInput.value = "";
+    textInput.value = "";
+    sendStatus.classList.add("hidden");
+    sendStatus.textContent = "";
+    await openConversation(selectedUser);
+    await loadConversations();
+  } catch (err) {
+    sendStatus.textContent = "Network error while sending message";
+    sendStatus.classList.remove("hidden");
+  } finally {
+    sendBtn.disabled = false;
+  }
+});
+
+async function bootstrapChat() {
+  await loadConversations();
+
+  if (initialChatWith) {
+    await openConversation(initialChatWith);
+    return;
+  }
+
+  if (conversations.length) {
+    await openConversation(conversations[0].username);
+  }
+}
+
+bootstrapChat();
+</script>
+
+</body>
+</html>

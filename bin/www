@@ -22,6 +22,31 @@ app.set('port', port);
 var server = http.createServer(app);
 
 /**
+ * 🔥 SOCKET.IO SETUP
+ */
+
+var io = require('socket.io')(server);
+
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // 🔥 JOIN ROOM
+  socket.on('join_room', (room) => {
+    socket.join(room);
+    console.log("Joined room:", room);
+  });
+
+  // 🔥 SEND MESSAGE TO ROOM ONLY
+  socket.on('send_message', (data) => {
+    io.to(data.room).emit('receive_message', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
+/**
  * Listen on provided port, on all network interfaces.
  */
 
@@ -37,12 +62,10 @@ function normalizePort(val) {
   var port = parseInt(val, 10);
 
   if (isNaN(port)) {
-    // named pipe
     return val;
   }
 
   if (port >= 0) {
-    // port number
     return port;
   }
 
@@ -62,7 +85,6 @@ function onError(error) {
     ? 'Pipe ' + port
     : 'Port ' + port;
 
-  // handle specific listen errors with friendly messages
   switch (error.code) {
     case 'EACCES':
       console.error(bind + ' requires elevated privileges');
