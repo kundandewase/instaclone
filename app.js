@@ -4,7 +4,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var expressSession = require('express-session');
-const MongoStore = require('connect-mongo');
+const MongoStoreModule = require('connect-mongo');
 require('dotenv').config();
 
 var indexRouter = require('./routes/index');
@@ -30,10 +30,16 @@ const sessionConfig = {
 };
 
 if (process.env.MONGODB_URI) {
-  sessionConfig.store = MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    touchAfter: 24 * 3600
-  });
+  const MongoStore = MongoStoreModule && MongoStoreModule.create
+    ? MongoStoreModule
+    : MongoStoreModule.default;
+
+  if (MongoStore && MongoStore.create) {
+    sessionConfig.store = MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      touchAfter: 24 * 3600
+    });
+  }
 }
 
 app.use(expressSession(sessionConfig));
