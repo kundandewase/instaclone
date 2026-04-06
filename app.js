@@ -4,6 +4,8 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var expressSession = require('express-session');
+const MongoStore = require('connect-mongo');
+require('dotenv').config();
 
 var indexRouter = require('./routes/index');
 
@@ -16,11 +18,25 @@ const User = require('./models/users');
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-app.use(expressSession({
+const sessionConfig = {
   resave: false,
   saveUninitialized: false,
-  secret: "hey hey hey"
-}));
+  secret: process.env.SESSION_SECRET || 'hey hey hey',
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  }
+};
+
+if (process.env.MONGODB_URI) {
+  sessionConfig.store = MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    touchAfter: 24 * 3600
+  });
+}
+
+app.use(expressSession(sessionConfig));
 app.use(passport.initialize());
 app.use(passport.session());
 passport.serializeUser(User.serializeUser());

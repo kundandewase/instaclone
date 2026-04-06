@@ -1,7 +1,16 @@
 const mongoose = require('mongoose');
 const plm = require("passport-local-mongoose");
+require('dotenv').config();
 
-mongoose.connect("mongodb://127.0.0.1:27017/instaclone");
+const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/instaclone";
+
+mongoose.connect(mongoUri)
+  .then(() => {
+    console.log("MongoDB connected");
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err.message);
+  });
 
 const userSchema = mongoose.Schema({
   username: String,
