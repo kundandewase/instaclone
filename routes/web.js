@@ -36,7 +36,11 @@ router.post('/chat', isLoggedIn, async (req, res) => {
 });
 
 router.get('/login', function (req, res) {
-  res.render('login', { footer: false });
+  res.render('login', {
+    footer: false,
+    loginError: req.query.error === '1',
+    attemptedUsername: (req.query.u || '').trim(),
+  });
 });
 
 router.get('/feed', isLoggedIn, async function (req, res) {
@@ -192,12 +196,27 @@ router.post('/register', function (req, res, next) {
   }).catch(next);
 });
 
-router.post('/login',
-  passport.authenticate('local', {
-    successRedirect: '/feed',
-    failureRedirect: '/login',
-  })
-);
+router.post('/login', function (req, res, next) {
+  passport.authenticate('local', function (err, user) {
+    if (err) {
+      return next(err);
+    }
+
+    if (!user) {
+      const attempted = (req.body.username || '').trim();
+      const suffix = attempted ? `&u=${encodeURIComponent(attempted)}` : '';
+      return res.redirect(`/login?error=1${suffix}`);
+    }
+
+    return req.logIn(user, function (loginErr) {
+      if (loginErr) {
+        return next(loginErr);
+      }
+
+      return res.redirect('/feed');
+    });
+  })(req, res, next);
+});
 
 router.get('/logout', function (req, res, next) {
   req.logout(function (err) {
