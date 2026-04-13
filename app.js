@@ -15,6 +15,12 @@ const LocalStrategy = require('passport-local');
 
 var app = express();
 const User = require('./models/users'); 
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction) {
+  // Required for secure cookies when running behind Render/NGINX proxy.
+  app.set('trust proxy', 1);
+}
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -23,11 +29,12 @@ app.set('view engine', 'ejs');
 const sessionConfig = {
   resave: false,
   saveUninitialized: false,
+  proxy: isProduction,
   secret: process.env.SESSION_SECRET || 'hey hey hey',
   cookie: {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production'
+    secure: isProduction ? 'auto' : false
   }
 };
 
