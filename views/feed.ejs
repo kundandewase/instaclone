@@ -142,7 +142,7 @@
             heartwithborder.classList.remove("text-red-500")
             heartwithborder.classList.add("ri-heart-3-line")
           }
-          fetch(`/like/${dets.target.dataset.postid}`)
+          fetch(`/api/posts/${dets.target.dataset.postid}/like`)
             .then(raw => raw.json())
             .then(response => {
               console.log(response.like.length);
@@ -176,7 +176,7 @@
         }
         else if (dets.target.classList.contains("save")) {
           var id = dets.target.dataset.postid;
-          fetch(`/save/${id}`)
+          fetch(`/api/posts/${id}/save`)
             .then(raw => raw.json())
             .then(result => {
               if (!dets.target.classList.contains("ri-bookmark-line")) {

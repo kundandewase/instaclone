@@ -7,9 +7,11 @@ var expressSession = require('express-session');
 const MongoStoreModule = require('connect-mongo');
 require('dotenv').config();
 
-var indexRouter = require('./routes/index');
+var webRouter = require('./routes/web');
+var apiRouter = require('./routes/api');
 
 const passport = require('passport');
+const LocalStrategy = require('passport-local');
 
 var app = express();
 const User = require('./models/users'); 
@@ -45,6 +47,7 @@ if (process.env.MONGODB_URI) {
 app.use(expressSession(sessionConfig));
 app.use(passport.initialize());
 app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
@@ -54,7 +57,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
+app.use('/', webRouter);
+app.use('/api', apiRouter);
 
 
 // catch 404 and forward to error handler

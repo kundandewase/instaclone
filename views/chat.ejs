@@ -70,7 +70,7 @@
         </div>
 
         <div class="border-t border-slate-200/80 bg-white px-4 sm:px-5 py-4">
-          <form id="sendForm" class="flex items-end gap-3" method="POST" action="/send-message">
+          <form id="sendForm" class="flex items-end gap-3" method="POST" action="/api/messages/send">
             <div class="flex-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-slate-300 focus-within:bg-white transition">
               <input id="messageInput" type="text" placeholder="Message..."
                 class="w-full bg-transparent outline-none text-sm sm:text-[15px] placeholder:text-slate-400" autocomplete="off" disabled>
@@ -206,7 +206,7 @@ function renderMessages(messages) {
 }
 
 async function loadConversations() {
-  const res = await fetch("/chat/conversations", { headers: { Accept: "application/json" } });
+  const res = await fetch("/api/chat/conversations", { headers: { Accept: "application/json" } });
   const data = await res.json();
   conversations = data.conversations || [];
   renderConversations();
@@ -223,7 +223,7 @@ async function openConversation(username) {
   renderConversations();
 
   try {
-    const res = await fetch(`/chat/${encodeURIComponent(username)}`, { headers: { Accept: "application/json" } });
+    const res = await fetch(`/api/chat/${encodeURIComponent(username)}`, { headers: { Accept: "application/json" } });
     if (!res.ok) {
       throw new Error("Could not load conversation");
     }
@@ -242,7 +242,7 @@ searchInput.addEventListener("input", async () => {
     return;
   }
 
-  const res = await fetch(`/search/${encodeURIComponent(query)}`, { headers: { Accept: "application/json" } });
+  const res = await fetch(`/api/users/search/${encodeURIComponent(query)}`, { headers: { Accept: "application/json" } });
   const users = await res.json();
 
   searchResults.innerHTML = "";
@@ -291,7 +291,7 @@ sendForm.addEventListener("submit", async (event) => {
   sendBtn.disabled = true;
 
   try {
-    const res = await fetch("/send-message", {
+    const res = await fetch("/api/messages/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

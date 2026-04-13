@@ -15,7 +15,7 @@
 
         inp.addEventListener("input", function (e) {
             if (inp.value !== '') {
-                fetch(`/search/${inp.value}`)
+                fetch(`/api/users/search/${encodeURIComponent(inp.value)}`)
                     .then(raw => raw.json())
                     .then(result => {
                         let clutter = "";
