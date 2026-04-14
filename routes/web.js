@@ -197,25 +197,47 @@ router.post('/register', function (req, res, next) {
 });
 
 router.post('/login', function (req, res, next) {
-  passport.authenticate('local', function (err, user) {
-    if (err) {
-      return next(err);
-    }
+  const attempted = (req.body.username || '').trim();
 
-    if (!user) {
-      const attempted = (req.body.username || '').trim();
-      const suffix = attempted ? `&u=${encodeURIComponent(attempted)}` : '';
-      return res.redirect(`/login?error=1${suffix}`);
-    }
-
-    return req.logIn(user, function (loginErr) {
-      if (loginErr) {
-        return next(loginErr);
+  const runAuthentication = () => {
+    passport.authenticate('local', function (err, user) {
+      if (err) {
+        return next(err);
       }
 
-      return res.redirect('/feed');
+      if (!user) {
+        const suffix = attempted ? `&u=${encodeURIComponent(attempted)}` : '';
+        return res.redirect(`/login?error=1${suffix}`);
+      }
+
+      return req.logIn(user, function (loginErr) {
+        if (loginErr) {
+          return next(loginErr);
+        }
+
+        return res.redirect('/feed');
+      });
+    })(req, res, next);
+  };
+
+  if (!req.isAuthenticated()) {
+    return runAuthentication();
+  }
+
+  // Replace existing logged-in user before authenticating a different account.
+  return req.logout(function (logoutErr) {
+    if (logoutErr) {
+      return next(logoutErr);
+    }
+
+    return req.session.regenerate(function (sessionErr) {
+      if (sessionErr) {
+        return next(sessionErr);
+      }
+
+      return runAuthentication();
     });
-  })(req, res, next);
+  });
 });
 
 router.get('/logout', function (req, res, next) {

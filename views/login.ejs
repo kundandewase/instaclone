@@ -1,18 +1,79 @@
 <% include ./partials/header.ejs %>
-  <div class="w-full min-h-screen bg-zinc-900 text-white py-5 flex flex-col items-center justify-center">
-    <div class="flex flex-col items-center gap-5 px-4">
-      <img class="w-1/2" src="/images/logo.png" alt="">
+  <div class="w-full min-h-screen bg-[#111217] text-white px-4 py-8 flex items-center justify-center">
+    <div class="w-full max-w-[380px] rounded-[42px] bg-black border border-zinc-900 shadow-[0_25px_80px_rgba(0,0,0,0.6)] px-7 py-10 sm:py-12">
+      <div class="text-center mb-8">
+        <img class="w-36 mx-auto" src="/images/logo.png" alt="Instagram">
+      </div>
+
       <% if (typeof loginError !== 'undefined' && loginError) { %>
-        <p class="w-full rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+        <p class="w-full rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 mb-4 text-xs text-red-300 text-center">
           Invalid username or password. Try again.
         </p>
       <% } %>
+
       <form class="w-full" action="/login" method="post">
-        <input class="px-3 mt-2 py-2 border-2 border-zinc-800 rounded-md block w-full bg-zinc-900" type="text" placeholder="username" name="username" value="<%= typeof attemptedUsername !== 'undefined' ? attemptedUsername : '' %>">
-        <input class="px-3 mt-2 py-2 border-2 border-zinc-800 rounded-md block w-full bg-zinc-900" type="password" placeholder="password" name="password">
-        <input class="w-full bg-blue-500 px-3 py-3 rounded-md mt-2" type="submit" value="Log In">
+        <input
+          class="w-full h-11 px-4 rounded-md bg-zinc-300/90 text-black placeholder:text-zinc-500 outline-none text-sm"
+          type="text"
+          placeholder="Phone number,username or email address"
+          name="username"
+          value="<%= typeof attemptedUsername !== 'undefined' ? attemptedUsername : '' %>"
+        >
+
+        <div class="relative mt-3">
+          <input
+            id="password"
+            class="w-full h-11 px-4 pr-10 rounded-md bg-zinc-300/90 text-black placeholder:text-zinc-500 outline-none text-sm"
+            type="password"
+            placeholder="Password"
+            name="password"
+          >
+          <button id="togglePass" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" aria-label="Toggle password">
+            <i id="passIcon" class="ri-eye-off-line"></i>
+          </button>
+        </div>
+
+        <div class="flex justify-end mt-2 mb-6">
+          <a href="#" class="text-xs text-zinc-300 hover:text-white transition">Forget password?</a>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full h-11 rounded-md text-white font-semibold text-xl bg-gradient-to-r from-[#5f1191] via-[#8f1563] to-[#dc2824] hover:brightness-110 transition"
+        >
+          login
+        </button>
       </form>
-      <span>Don't have an account ? <a href="/" class="text-blue-500">Sign Up</a></span>
+
+      <div class="flex items-center gap-3 mt-10 text-zinc-500 text-xs">
+        <div class="h-px flex-1 bg-zinc-600"></div>
+        <span>OR</span>
+        <div class="h-px flex-1 bg-zinc-600"></div>
+      </div>
+
+      <button type="button" class="w-full mt-6 flex items-center justify-center gap-2 text-zinc-400 hover:text-zinc-200 transition text-sm">
+        <i class="ri-meta-line text-base"></i>
+        <span>login with meta</span>
+      </button>
+
+      <p class="text-center mt-24 text-xs text-zinc-500">
+        Don't have an account?
+        <a href="/" class="text-zinc-300 hover:text-white transition">Sign up</a>
+      </p>
     </div>
   </div>
+
+  <script>
+    const togglePass = document.getElementById('togglePass');
+    const passwordInput = document.getElementById('password');
+    const passIcon = document.getElementById('passIcon');
+
+    if (togglePass && passwordInput && passIcon) {
+      togglePass.addEventListener('click', function () {
+        const visible = passwordInput.type === 'text';
+        passwordInput.type = visible ? 'password' : 'text';
+        passIcon.className = visible ? 'ri-eye-off-line' : 'ri-eye-line';
+      });
+    }
+  </script>
 <% include ./partials/footer.ejs %>
